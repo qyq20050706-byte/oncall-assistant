@@ -47,6 +47,9 @@ def parse_html(html: str) -> Tuple[str, str]:
     # ③ 提取可见文本（BeautifulSoup 自动处理 HTML entities decode）
     # separator="\n" 保留段落结构，便于后续 snippet 提取
     clean_text = soup.get_text(separator="\n", strip=True)
+    
+    import html as html_lib
+    clean_text = html_lib.unescape(clean_text)
 
     # ④ 清理多余空行（超过 2 个连续换行压缩为 2 个）
     import re
@@ -103,3 +106,61 @@ def extract_sections(html: str) -> list[dict]:
         })
 
     return sections
+
+def parse_and_extract(html: str) -> tuple[str, str, list[dict]]:
+    """一次解析返回 (title, clean_text, sections)，性能更好"""
+    try:
+        soup = BeautifulSoup(html, "lxml")
+    except Exception:
+        soup = BeautifulSoup(html, "html.parser")
+
+    # 移除 script / style / noscript
+    for tag in soup.find_all(["script", "style", "noscript"]):
+        tag.decompose()
+
+    # title
+    title = ""
+    title_tag = soup.find("title")
+    if title_tag:
+        title = title_tag.get_text(strip=True)
+    if not title:
+        h1_tag = soup.find("h1")
+        if h1_tag:
+            title = h1_tag.get_text(strip=True)
+    if not title:
+        title = "未知文档"
+
+    # clean_text
+    import html as html_lib
+    import re as _re
+    clean_text = soup.get_text(separator="\n", strip=True)
+    clean_text = html_lib.unescape(clean_text)
+    clean_text = _re.sub(r"\n{3,}", "\n\n", clean_text).strip()
+
+    # sections
+    sections = []
+    current_heading = "概述"
+    current_content_parts = []
+
+    for element in soup.find_all(["h1", "h2", "h3", "p"]):
+        text = element.get_text(strip=True)
+        if not text:
+            continue
+        if element.name in ("h1", "h2", "h3"):
+            if current_content_parts:
+                sections.append({
+                    "heading": current_heading,
+                    "content": "\n".join(current_content_parts),
+                })
+                current_content_parts = []
+            current_heading = text
+        else:
+            current_content_parts.append(text)
+
+    if current_content_parts:
+        sections.append({
+            "heading": current_heading,
+            "content": "\n".join(current_content_parts),
+        })
+
+    return title, clean_text, sections

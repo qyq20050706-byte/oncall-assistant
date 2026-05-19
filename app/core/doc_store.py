@@ -13,6 +13,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 from app.core.html_clean import parse_html, extract_sections
+from app.core.html_clean import parse_and_extract
 
 logger = logging.getLogger(__name__)
 
@@ -49,20 +50,16 @@ class DocStore:
         # 生成 manifest.json（供 Phase 3 Agent 使用）
         self._update_manifest()
 
-    def _add_doc(self, doc_id: str, html: str, file_path: Optional[Path] = None):
-        """
-        内部方法：解析 HTML 并存储文档元数据
-        """
-        title, clean_text = parse_html(html)
-        sections = extract_sections(html)
+    from app.core.html_clean import parse_and_extract
 
+    def _add_doc(self, doc_id, html, file_path=None):
+        title, clean_text, sections = parse_and_extract(html)
         self._docs[doc_id] = {
             "id": doc_id,
             "title": title,
             "path": str(file_path) if file_path else str(DATA_DIR / f"{doc_id}.html"),
             "clean_text": clean_text,
             "sections": sections,
-            "html": html,  # 保留原始 HTML，供 Agent readFile 使用
         }
 
     def add_document(self, doc_id: str, html: str) -> dict:

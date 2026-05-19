@@ -9,22 +9,26 @@ from typing import Optional
 from rank_bm25 import BM25Okapi
 from app.core.doc_store import DocStore
 
-
 def tokenize(text: str) -> list[str]:
     """
-    中文分词（字符级）+ 英文词级 混合 tokenizer
-    对于中文，每个字作为一个 token（无需 jieba）
-    对于英文/数字，按单词切分
-    这样能同时处理中英文检索
+    中英混合 tokenizer:
+      - 中文单字 token（基础召回）
+      - 中文相邻字 bigram token（提升排序准确度，"故障"=故+障+故障）
+      - 英文/数字小写单词
+      - 特殊字符（如 &）单独保留
     """
-    # 提取所有中文字符（每字单独成 token）
     chinese_chars = re.findall(r'[\u4e00-\u9fff]', text)
-    # 提取英文单词和数字（小写）
     english_words = re.findall(r'[a-zA-Z0-9]+', text.lower())
-    # 保留特殊字符（如 & 本身作为 token）
     special_chars = re.findall(r'[&<>@#$%^*]', text)
-    
-    return chinese_chars + english_words + special_chars
+
+    # 中文 bigram：把相邻两个汉字拼成 token
+    bigrams = []
+    chinese_seq = re.findall(r'[\u4e00-\u9fff]+', text)
+    for seq in chinese_seq:
+        for i in range(len(seq) - 1):
+            bigrams.append(seq[i:i+2])
+
+    return chinese_chars + bigrams + english_words + special_chars
 
 
 class KeywordIndex:

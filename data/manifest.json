@@ -1,0 +1,55 @@
+{
+  "description": "On-Call SOP 文档目录，通过 readFile(filename) 读取对应文档",
+  "documents": [
+    {
+      "filename": "sop-001.html",
+      "title": "后端服务 On-Call SOP",
+      "id": "sop-001"
+    },
+    {
+      "filename": "sop-002.html",
+      "title": "数据库DBA On-Call SOP",
+      "id": "sop-002"
+    },
+    {
+      "filename": "sop-003.html",
+      "title": "前端Web On-Call SOP & 故障处理指南",
+      "id": "sop-003"
+    },
+    {
+      "filename": "sop-004.html",
+      "title": "SRE基础设施 On-Call SOP",
+      "id": "sop-004"
+    },
+    {
+      "filename": "sop-005.html",
+      "title": "信息安全 On-Call SOP",
+      "id": "sop-005"
+    },
+    {
+      "filename": "sop-006.html",
+      "title": "数据平台 On-Call SOP",
+      "id": "sop-006"
+    },
+    {
+      "filename": "sop-007.html",
+      "title": "移动客户端 On-Call SOP",
+      "id": "sop-007"
+    },
+    {
+      "filename": "sop-008.html",
+      "title": "AI算法 On-Call SOP & 模型服务故障处理指南",
+      "id": "sop-008"
+    },
+    {
+      "filename": "sop-009.html",
+      "title": "QA质量保障 On-Call SOP",
+      "id": "sop-009"
+    },
+    {
+      "filename": "sop-010.html",
+      "title": "网络与CDN On-Call SOP",
+      "id": "sop-010"
+    }
+  ]
+}

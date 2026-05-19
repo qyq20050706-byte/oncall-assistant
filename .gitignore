@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.zip
+.DS_Store
+index_cache/
+# 不忽略 models/ 目录（需要提交模型供离线使用）
+# 但忽略模型的大型二进制文件（可选，视大小决定）

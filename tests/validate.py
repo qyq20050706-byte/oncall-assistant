@@ -152,6 +152,73 @@ def test_phase2():
             f"scores: {scores[:5]}"
         )
 
+# ════════════════════════════════════════════
+# Phase 3：Agent 对话
+# ════════════════════════════════════════════
+def test_phase3():
+    print(f"\n{YELLOW}=== Phase 3 验收：Agent 对话 ==={RESET}")
+
+    # 先确认 v3 服务可用
+    try:
+        r = requests.get(f"{BASE_URL}/v3/", timeout=5)
+        check("v3 页面可访问", r.status_code == 200)
+    except Exception as e:
+        check("v3 页面可访问", False, str(e))
+        return
+
+    def ask(question: str) -> dict:
+        r = requests.post(
+            f"{BASE_URL}/v3/chat",
+            json={"message": question},
+            timeout=60,   # LLM 调用可能需要较长时间
+        )
+        return r.json()
+
+    # Case 1: 数据库主从延迟 → 读取 sop-002
+    data = ask("数据库主从延迟超过30秒怎么处理？")
+    check("主从延迟：有 tool_calls 记录",
+          len(data.get("tool_calls", [])) > 0,
+          f"tool_calls: {data.get('tool_calls')}")
+    check("主从延迟：sources 包含 sop-002",
+          "sop-002" in data.get("sources", []),
+          f"sources: {data.get('sources')}")
+    check("主从延迟：reply 非空且有实质内容",
+          len(data.get("reply", "")) > 50,
+          f"reply 长度: {len(data.get('reply', ''))}")
+
+    # Case 2: 服务 OOM → 读取 sop-001
+    data = ask("服务 OOM 了怎么办？")
+    check("OOM：sources 包含 sop-001",
+          "sop-001" in data.get("sources", []),
+          f"sources: {data.get('sources')}")
+    check("OOM：tool_calls 包含 readFile",
+          any(tc.get("tool") == "readFile" for tc in data.get("tool_calls", [])),
+          f"tool_calls: {[tc.get('tool') for tc in data.get('tool_calls', [])]}")
+
+    # Case 3: 怀疑入侵 → 读取 sop-005
+    data = ask("怀疑有人入侵了系统")
+    check("入侵：sources 包含 sop-005",
+          "sop-005" in data.get("sources", []),
+          f"sources: {data.get('sources')}")
+
+    # Case 4: 推荐质量下降 → 读取 sop-008
+    data = ask("推荐结果质量下降了")
+    check("推荐质量：sources 包含 sop-008",
+          "sop-008" in data.get("sources", []),
+          f"sources: {data.get('sources')}")
+
+    # Case 5: 工具调用格式校验
+    data = ask("P0故障的响应流程是什么？")
+    tool_calls = data.get("tool_calls", [])
+    check("P0故障：tool_calls 格式正确（含tool/input/output/time_ms）",
+          all(
+              all(k in tc for k in ["tool", "input", "output", "time_ms"])
+              for tc in tool_calls
+          ),
+          f"tool_calls keys: {[list(tc.keys()) for tc in tool_calls]}")
+    check("P0故障：reply 非空",
+          len(data.get("reply", "")) > 50,
+          f"reply 长度: {len(data.get('reply', ''))}")
 
 # ════════════════════════════════════════════
 # 主入口
@@ -164,7 +231,7 @@ if __name__ == "__main__":
     test_phase0()
     test_phase1()
     test_phase2()
-    # test_phase3()  # Phase 3 完成后解注释
+    test_phase3()
 
     print(f"\n{'='*50}")
     print(f"结果：{GREEN}{passed} PASS{RESET}  {RED}{failed} FAIL{RESET}")

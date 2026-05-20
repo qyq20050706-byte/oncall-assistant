@@ -1,10 +1,18 @@
-venv/
+# 模型文件太大，不入库
+models/
+
+# 缓存
+index_cache/
 __pycache__/
 *.pyc
-*.pyo
+.venv/
+venv/
 .env
-*.zip
+
+# IDE
+.vscode/
+.idea/
+
+# 系统
 .DS_Store
-index_cache/
-# 不忽略 models/ 目录（需要提交模型供离线使用）
-# 但忽略模型的大型二进制文件（可选，视大小决定）
+Thumbs.db

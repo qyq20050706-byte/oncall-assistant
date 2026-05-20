@@ -77,13 +77,32 @@ class VectorIndex:
     def _load_model(self):
         from sentence_transformers import SentenceTransformer
         logger.info(f"加载 Embedding 模型: {MODEL_NAME}")
-        os.environ["HF_HUB_OFFLINE"] = "1"  # ← 现在 os 已 import
-        self._model = SentenceTransformer(
-            MODEL_NAME,
-            cache_folder=str(MODELS_DIR),
-            local_files_only=True,
-        )
-        logger.info("Embedding 模型加载完成")
+
+        # 优先尝试本地缓存（离线）
+        try:
+            os.environ["HF_HUB_OFFLINE"] = "1"
+            self._model = SentenceTransformer(
+                MODEL_NAME,
+                cache_folder=str(MODELS_DIR),
+                local_files_only=True,
+            )
+            logger.info("Embedding 模型加载完成（本地缓存）")
+            return
+        except Exception as e:
+            logger.info(f"本地未找到模型缓存，尝试在线下载: {e}")
+
+        # 本地没有，转为在线模式下载
+        os.environ.pop("HF_HUB_OFFLINE", None)
+        try:
+            self._model = SentenceTransformer(
+                MODEL_NAME,
+                cache_folder=str(MODELS_DIR),
+                local_files_only=False,
+            )
+            logger.info("Embedding 模型加载完成（在线下载）")
+        except Exception as e:
+            logger.warning(f"在线下载也失败（{e}），将使用 TF-IDF 兜底")
+            raise
 
     def _rebuild_matrix(self):
         """从 self._chunks 重建 ndarray 矩阵（search 直接复用）"""

@@ -23,12 +23,17 @@
 unzip your-name-exam.zip
 cd oncall-assistant
 
-# 2. 创建虚拟环境并安装依赖
+# 2. 创建虚拟环境
 python3 -m venv venv
 source venv/bin/activate
+
+# 3. 安装 CPU 版 torch（约 200MB，避免误装 GPU 版的 5GB+ 包）
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# 4. 安装项目依赖
 pip install -r requirements.txt
 
-# 3. 启动服务
+# 5. 启动服务
 python -m app.main
 ```
 
@@ -43,9 +48,12 @@ cp .env.example .env
 ```
 
 ⚠️ **首次启动说明**：
-- 自动下载 118MB 多语言 Embedding 模型（`paraphrase-multilingual-MiniLM-L12-v2`）
+- 自动下载约 470MB 多语言 Embedding 模型（`paraphrase-multilingual-MiniLM-L12-v2`）
 - 自动计算文档向量并生成缓存
 - 后续启动直接命中缓存，4秒内完成
+
+> 💡 **离线兜底**：如果网络不通无法下载模型，系统会自动降级使用 TF-IDF 算法，
+> Phase 2 仍能正常工作，只是排序质量略低于语义模型。
 
 ### 验收测试
 ```bash
@@ -140,4 +148,3 @@ python -m app.main
 # 3. 测试 v3 Agent 对话：问 "服务 OOM 了怎么办？"
 # 4. 运行验收脚本：python tests/validate.py
 ```
-

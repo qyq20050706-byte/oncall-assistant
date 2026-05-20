@@ -292,9 +292,17 @@ class AgentRunner:
         logger.info(f"语义检索候选（合并）: {candidate_ids}")
 
         # ── 相关度门槛：最高分低于阈值，说明问题与 SOP 无关
-        RELEVANCE_THRESHOLD = 0.35
+        from app.core.vector_index import vector_index
+        if vector_index.mode == "TF-IDF 兜底":
+            RELEVANCE_THRESHOLD = 0.02
+        else:
+            RELEVANCE_THRESHOLD = 0.25
+
         top_score = all_candidates[0]["score"] if all_candidates else 0.0
-        logger.info(f"最高相关度分数: {top_score:.4f}，阈值: {RELEVANCE_THRESHOLD}")
+        logger.info(
+            f"相关度判定: top1={top_score:.4f}, 阈值={RELEVANCE_THRESHOLD} "
+            f"(模式: {vector_index.mode}), 候选={[(c['id'], round(c['score'], 4)) for c in all_candidates[:3]]}"
+        )
 
         if top_score < RELEVANCE_THRESHOLD:
             if LLM_AVAILABLE:

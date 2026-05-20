@@ -76,29 +76,31 @@ class VectorIndex:
 
     def _load_model(self):
         from sentence_transformers import SentenceTransformer
+        import inspect
+
         logger.info(f"加载 Embedding 模型: {MODEL_NAME}")
 
-        # 优先尝试本地缓存（离线）
+        # 检测当前 SentenceTransformer 是否支持 local_files_only 参数
+        # 新版（5.x+）已移除该参数
+        sig = inspect.signature(SentenceTransformer.__init__)
+        supports_local_only = "local_files_only" in sig.parameters
+
+        # 优先离线加载
         try:
             os.environ["HF_HUB_OFFLINE"] = "1"
-            self._model = SentenceTransformer(
-                MODEL_NAME,
-                cache_folder=str(MODELS_DIR),
-                local_files_only=True,
-            )
+            kwargs = {"cache_folder": str(MODELS_DIR)}
+            if supports_local_only:
+                kwargs["local_files_only"] = True
+            self._model = SentenceTransformer(MODEL_NAME, **kwargs)
             logger.info("Embedding 模型加载完成（本地缓存）")
             return
         except Exception as e:
             logger.info(f"本地未找到模型缓存，尝试在线下载: {e}")
 
-        # 本地没有，转为在线模式下载
+        # 离线失败，转在线下载
         os.environ.pop("HF_HUB_OFFLINE", None)
         try:
-            self._model = SentenceTransformer(
-                MODEL_NAME,
-                cache_folder=str(MODELS_DIR),
-                local_files_only=False,
-            )
+            self._model = SentenceTransformer(MODEL_NAME, cache_folder=str(MODELS_DIR))
             logger.info("Embedding 模型加载完成（在线下载）")
         except Exception as e:
             logger.warning(f"在线下载也失败（{e}），将使用 TF-IDF 兜底")

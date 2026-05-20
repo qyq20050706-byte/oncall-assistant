@@ -27,13 +27,17 @@ cd oncall-assistant
 python3 -m venv venv
 source venv/bin/activate
 
-# 3. 安装 CPU 版 torch（约 200MB，避免误装 GPU 版的 5GB+ 包）
+# 3. 升级 pip（重要：避免依赖解析器 bug）
+pip install --upgrade pip --force-reinstall
+pip cache purge
+
+# 4. 安装 CPU 版 torch（约 200MB，避免误装 GPU 版的 5GB+ 包）
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# 4. 安装项目依赖
+# 5. 安装项目依赖
 pip install -r requirements.txt
 
-# 5. 启动服务
+# 6 . 启动服务
 python -m app.main
 ```
 
